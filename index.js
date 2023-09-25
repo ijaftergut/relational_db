@@ -4,6 +4,8 @@ const express = require('express');
 const app = express();
 const path = require('path');
 
+app.use(express.json())
+
 const homePage = path.join(__dirname, 'index.html');
 app.get('/', (req, res)=> res.sendFile(homePage));
 
@@ -16,6 +18,38 @@ app.get('/dist/main.js.map', (req, res)=> res.sendFile(reactSourceMap));
 const styleSheet = path.join(__dirname, 'styles.css');
 app.get('/styles.css', (req, res)=> res.sendFile(styleSheet));
 
+app.put('/api/things/:id', async(req, res, next)=>{
+  try{
+    const SQL = `
+      UPDATE things SET user_id = $1, name = $2
+      WHERE id = $3 RETURNING *
+    `
+    const response = await client.query(SQL, [req.body.user_id, req.body.name, req.params.id])
+    res.send(response.rows[0]);
+  } catch(error){
+    next(error)
+  }
+})
+
+app.get('/api/things', async(req,res,next)=>{
+  try{
+    const response = await client.query('SELECT * FROM things');
+    res.send(response.rows);
+
+  } catch(error){
+    next(error)
+  }
+})
+app.get('/api/users', async(req,res,next)=>{
+  try{
+    const response = await client.query('SELECT * FROM users');
+    res.send(response.rows);
+
+  } catch(error){
+    next(error)
+  }
+})
+
 const init = async()=> {
   await client.connect();
   console.log('connected to database');
@@ -24,7 +58,7 @@ const init = async()=> {
   DROP TABLE IF EXISTS users;
     CREATE TABLE users(
       id SERIAL PRIMARY KEY,
-      name VARCHAR(100)
+      name VARCHAR(100) UNIQUE
 
     );
     CREATE TABLE things(
