@@ -1,5 +1,5 @@
 const pg = require('pg');
-const client = new pg.Client('postgres://localhost/fullstack_template_db');
+const client = new pg.Client('postgres://localhost/relational_db');
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -20,11 +20,32 @@ const init = async()=> {
   await client.connect();
   console.log('connected to database');
   const SQL = `
-    SQL SETUP AND SEED
-  `;
+  DROP TABLE IF EXISTS things;
+  DROP TABLE IF EXISTS users;
+    CREATE TABLE users(
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100)
+
+    );
+    CREATE TABLE things(
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) UNIQUE,
+      user_id INTEGER REFERENCES users(id)
+
+    );
+    INSERT INTO users(name) VALUES ('moe');
+    INSERT INTO users(name) VALUES ('lucy');
+    INSERT INTO users(name) VALUES ('curly');
+    INSERT INTO users(name) VALUES ('ethyl');
+    INSERT INTO things(name, user_id) VALUES ('foo', (SELECT id FROM users WHERE name='moe'));
+    INSERT INTO things(name, user_id) VALUES ('bar', (SELECT id FROM users WHERE name='moe'));
+    INSERT INTO things(name, user_id) VALUES ('bazz', (SELECT id FROM users WHERE name='lucy'));
+    INSERT INTO things(name, user_id) VALUES ('quq', (SELECT id FROM users WHERE name='curly'));
+    `;
+  await client.query(SQL)
   console.log('create your tables and seed data');
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 4000;
   app.listen(port, ()=> {
     console.log(`listening on port ${port}`);
   });
